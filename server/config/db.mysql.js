@@ -1,80 +1,173 @@
-const { Sequelize } = require('sequelize');
 const config = require('./config');
 
-const sequelize = new Sequelize(
-  config.mysql.database,
-  config.mysql.user,
-  config.mysql.password,
-  {
-    host: config.mysql.host,
-    port: config.mysql.port,
-    dialect: config.mysql.dialect,
-    storage: config.mysql.dialect === 'sqlite' ? config.mysql.storage : null,
-    logging: config.nodeEnv === 'development' ? console.log : false,
-    pool: config.mysql.dialect !== 'sqlite' ? {
-      max: 10,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    } : undefined,
-    define: {
-      timestamps: true,
-      underscored: true,
-    },
-  }
-);
+// ============================================================
+// In-memory mock Sequelize for Vercel (sqlite3 native fails)
+// ============================================================
+const mockStores = {};
+let mockIdCounter = 1;
 
-const seedDefaultUser = async (sequelize) => {
+function mockWrap(tableName, raw) {
+  const inst = Object.create(raw);
+  Object.assign(inst, raw);
+  inst.toJSON = () => ({ ...raw });
+  inst.update = async (fields) => { Object.assign(raw, fields); return inst; };
+  inst.save = async () => inst;
+  inst.destroy = async () => {
+    const arr = mockStores[tableName] || [];
+    const idx = arr.findIndex(r => r.id === raw.id);
+    if (idx !== -1) arr.splice(idx, 1);
+  };
+  return inst;
+}
+
+function matchWhere(record, where) {
+  return Object.keys(where).every(k => String(record[k]) === String(where[k]));
+}
+
+function createMockModel(tableName) {
+  if (!mockStores[tableName]) mockStores[tableName] = [];
+
+  const model = {
+    findOne: async (opts = {}) => {
+      const where = opts.where || {};
+      const rec = mockStores[tableName].find(r => matchWhere(r, where));
+      return rec ? mockWrap(tableName, rec) : null;
+    },
+    findByPk: async (id) => {
+      const rec = mockStores[tableName].find(r => r.id == id);
+      return rec ? mockWrap(tableName, rec) : null;
+    },
+    findAll: async (opts = {}) => {
+      const where = opts.where || {};
+      return mockStores[tableName]
+        .filter(r => matchWhere(r, where))
+        .map(r => mockWrap(tableName, r));
+    },
+    create: async (data) => {
+      const rec = { id: mockIdCounter++, ...data, created_at: new Date(), updated_at: new Date() };
+      mockStores[tableName].push(rec);
+      return mockWrap(tableName, rec);
+    },
+    count: async (opts = {}) => {
+      const where = opts.where || {};
+      return mockStores[tableName].filter(r => matchWhere(r, where)).length;
+    },
+    destroy: async (opts = {}) => {
+      const where = opts.where || {};
+      const before = mockStores[tableName].length;
+      mockStores[tableName] = mockStores[tableName].filter(r => !matchWhere(r, where));
+      return before - mockStores[tableName].length;
+    },
+    belongsTo: () => {},
+    hasMany: () => {},
+    hasOne: () => {},
+  };
+  return model;
+}
+
+function createMockSequelize() {
+  return {
+    define: (name, _schema, opts = {}) => {
+      const tableName = opts.tableName || name.toLowerCase() + 's';
+      return createMockModel(tableName);
+    },
+    authenticate: async () => { console.log('✅ Mock SQL database active (in-memory)'); },
+    sync: async () => { console.log('✅ Mock SQL tables synced'); },
+    query: async (sql, options = {}) => {
+      const r = options.replacements || {};
+      if (sql.includes('SELECT') && sql.includes('users')) {
+        const users = mockStores['users'] || [];
+        const found = users.filter(u => u.email === r.username);
+        return [found, {}];
+      }
+      if (sql.includes('INSERT') && sql.includes('users')) {
+        if (!mockStores['users']) mockStores['users'] = [];
+        const user = {
+          id: mockIdCounter++, name: 'glory', email: r.username,
+          password_hash: r.password_hash, role: 'client', plan: 'free',
+          is_active: true, created_at: new Date(), updated_at: new Date(),
+        };
+        mockStores['users'].push(user);
+        return [user, {}];
+      }
+      return [[], {}];
+    },
+  };
+}
+
+// ============================================================
+// Try real Sequelize, fall back to mock
+// ============================================================
+let sequelize;
+let usingMock = false;
+
+try {
+  const { Sequelize } = require('sequelize');
+  sequelize = new Sequelize(
+    config.mysql.database,
+    config.mysql.user,
+    config.mysql.password,
+    {
+      host: config.mysql.host,
+      port: config.mysql.port,
+      dialect: config.mysql.dialect,
+      storage: config.mysql.dialect === 'sqlite' ? config.mysql.storage : null,
+      logging: false,
+      pool: config.mysql.dialect !== 'sqlite' ? {
+        max: 10, min: 0, acquire: 30000, idle: 10000,
+      } : undefined,
+      define: { timestamps: true, underscored: true },
+    }
+  );
+  console.log('✅ Sequelize initialized successfully');
+} catch (err) {
+  console.warn('⚠️ Sequelize/SQLite init failed:', err.message);
+  console.log('🚀 Using in-memory mock database');
+  sequelize = createMockSequelize();
+  usingMock = true;
+}
+
+// ============================================================
+// Seed default user
+// ============================================================
+const seedDefaultUser = async (db) => {
   try {
     const username = 'glorytigga@123';
-    const [results] = await sequelize.query(
+    const [results] = await db.query(
       'SELECT id FROM users WHERE email = :username LIMIT 1',
-      {
-        replacements: { username }
-      }
+      { replacements: { username } }
     );
-
     if (!results || results.length === 0) {
       console.log('🌱 Seeding default user: glorytigga@123...');
       const bcrypt = require('bcryptjs');
-      const password = 'glorytigga@123';
       const salt = await bcrypt.genSalt(12);
-      const password_hash = await bcrypt.hash(password, salt);
-
-      const now = new Date();
-      await sequelize.query(
-        `INSERT INTO users (name, email, password_hash, role, plan, created_at, updated_at) 
+      const password_hash = await bcrypt.hash('glorytigga@123', salt);
+      await db.query(
+        `INSERT INTO users (name, email, password_hash, role, plan, created_at, updated_at)
          VALUES ('glory', :username, :password_hash, 'client', 'free', :now, :now)`,
-        {
-          replacements: { username, password_hash, now }
-        }
+        { replacements: { username, password_hash, now: new Date() } }
       );
-      console.log('✅ Default user glorytigga@123 seeded successfully!');
+      console.log('✅ Default user seeded!');
     } else {
-      console.log('👤 Default user glorytigga@123 already exists.');
+      console.log('👤 Default user already exists.');
     }
   } catch (error) {
-    console.warn('⚠️ Failed to seed default user:', error.message);
+    console.warn('⚠️ Seed skipped:', error.message);
   }
 };
 
+// ============================================================
+// Connect
+// ============================================================
 const connectMySQL = async () => {
   try {
     await sequelize.authenticate();
-    console.log(`✅ MySQL connected: ${config.mysql.host}:${config.mysql.port}/${config.mysql.database}`);
-
-    // Sync models (creates tables if they don't exist)
-    const shouldAlter = config.mysql.dialect === 'sqlite' ? false : (config.nodeEnv === 'development');
+    const shouldAlter = (!usingMock && config.mysql.dialect !== 'sqlite' && config.nodeEnv === 'development');
     await sequelize.sync({ alter: shouldAlter });
-    console.log('✅ MySQL/SQLite tables synced');
-
-    // Run seed hack
     await seedDefaultUser(sequelize);
-
     return sequelize;
   } catch (error) {
-    console.error(`❌ MySQL connection error: ${error.message}`);
-    console.warn('⚠️  MySQL features (users, subscriptions, payments) will be unavailable');
+    console.error('❌ MySQL connection error:', error.message);
     return null;
   }
 };
