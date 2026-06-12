@@ -101,8 +101,52 @@ function createMockSequelize() {
 let sequelize;
 let usingMock = false;
 
+// If we are on Vercel and using SQLite, copy the pre-seeded database.sqlite from the root
+// to /tmp/database.sqlite so that the pre-seeded user and initial schema exist.
+if (process.env.VERCEL && config.mysql.dialect === 'sqlite') {
+  const fs = require('fs');
+  const path = require('path');
+  const targetPath = config.mysql.storage || '/tmp/database.sqlite';
+  
+  if (!fs.existsSync(targetPath)) {
+    try {
+      console.log('🔍 Checking for pre-seeded database.sqlite to copy...');
+      const possiblePaths = [
+        path.join(process.cwd(), 'database.sqlite'),
+        path.join(process.cwd(), 'server', 'database.sqlite'),
+        path.join(__dirname, '..', '..', 'database.sqlite'),
+        path.join(__dirname, '..', 'database.sqlite'),
+      ];
+      
+      let copied = false;
+      for (const src of possiblePaths) {
+        if (fs.existsSync(src)) {
+          fs.copyFileSync(src, targetPath);
+          console.log(`🌱 Copied pre-seeded database from ${src} to ${targetPath}`);
+          copied = true;
+          break;
+        }
+      }
+      
+      if (!copied) {
+        console.warn('⚠️ Could not find source database.sqlite. SQLite will start empty.');
+      }
+    } catch (e) {
+      console.warn('⚠️ Failed to copy pre-seeded database.sqlite:', e.message);
+    }
+  } else {
+    console.log('✅ /tmp/database.sqlite already exists, reusing.');
+  }
+}
+
 try {
   const { Sequelize } = require('sequelize');
+  
+  // Test if sqlite3 can be loaded to avoid late failures on Vercel
+  if (config.mysql.dialect === 'sqlite') {
+    require('sqlite3');
+  }
+
   sequelize = new Sequelize(
     config.mysql.database,
     config.mysql.user,
@@ -126,6 +170,7 @@ try {
   sequelize = createMockSequelize();
   usingMock = true;
 }
+
 
 // ============================================================
 // Seed default user

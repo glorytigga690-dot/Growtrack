@@ -33,9 +33,29 @@ const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, config.jwt.secret);
 
     // Fetch user from DB to ensure they still exist and are active
-    const user = await User.findByPk(decoded.id, {
+    let user = await User.findByPk(decoded.id, {
       attributes: ['id', 'name', 'email', 'role', 'plan', 'is_active'],
     });
+
+    // Auto-recreate user from JWT if not found (Vercel cold start)
+    if (!user && decoded.email) {
+      try {
+        const bcrypt = require('bcryptjs');
+        const salt = await bcrypt.genSalt(12);
+        const password_hash = await bcrypt.hash('auto-restored', salt);
+        user = await User.create({
+          id: decoded.id,
+          name: decoded.email.split('@')[0] || decoded.email,
+          email: decoded.email,
+          password_hash,
+          role: decoded.role || 'client',
+          plan: decoded.plan || 'free',
+          is_active: true,
+        });
+      } catch (e) {
+        console.warn('⚠️ Auto-recreate user failed:', e.message);
+      }
+    }
 
     if (!user) {
       return res.status(401).json({
