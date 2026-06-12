@@ -13,34 +13,34 @@ async function renderDashboard() {
   
   container.innerHTML = `
     <div class="greeting-section animate-in">
-      <div class="greeting-text">${greeting}, <span class="highlight">${user.name.split(' ')[0]}</span>!</div>
+      <div class="greeting-text">${greeting}, <span class="highlight">${(user.name || 'User').split(' ')[0]}</span>!</div>
       <div class="greeting-subtitle">Ready to grow today? Let's make it count.</div>
     </div>
 
     <div class="grid-stats mb-lg" id="dashboard-stats">
       <div class="card stat-card animate-in animate-in-delay-1">
-        <div class="stat-icon purple"><i data-lucide="clipboard-list"></i></div>
+        <div class="stat-icon purple">📋</div>
         <div class="stat-info">
           <div class="stat-label">Today's Habits</div>
           <div class="stat-value" id="stat-habits-today">-/-</div>
         </div>
       </div>
       <div class="card stat-card animate-in animate-in-delay-2">
-        <div class="stat-icon green"><i data-lucide="target"></i></div>
+        <div class="stat-icon green">🎯</div>
         <div class="stat-info">
           <div class="stat-label">Active Goals</div>
           <div class="stat-value" id="stat-goals-active">0</div>
         </div>
       </div>
       <div class="card stat-card animate-in animate-in-delay-3">
-        <div class="stat-icon yellow"><i data-lucide="smile"></i></div>
+        <div class="stat-icon yellow">😊</div>
         <div class="stat-info">
           <div class="stat-label">Today's Mood</div>
           <div class="stat-value" id="stat-mood-today">—</div>
         </div>
       </div>
       <div class="card stat-card animate-in animate-in-delay-4">
-        <div class="stat-icon blue"><i data-lucide="trending-up"></i></div>
+        <div class="stat-icon blue">📈</div>
         <div class="stat-info">
           <div class="stat-label">Growth Score</div>
           <div class="stat-value" id="stat-growth-score">—</div>
@@ -78,23 +78,23 @@ async function renderDashboard() {
         <div class="card-body">
           <div class="mood-selector" id="dashboard-mood-selector">
             <div class="mood-option" data-score="1" onclick="quickLogMood(1)">
-              <span class="mood-emoji"><i data-lucide="frown" style="width:28px;height:28px;"></i></span>
+              <span class="mood-emoji">😢</span>
               <span class="mood-label">Awful</span>
             </div>
             <div class="mood-option" data-score="2" onclick="quickLogMood(2)">
-              <span class="mood-emoji"><i data-lucide="meh" style="width:28px;height:28px;"></i></span>
+              <span class="mood-emoji">😕</span>
               <span class="mood-label">Bad</span>
             </div>
             <div class="mood-option" data-score="3" onclick="quickLogMood(3)">
-              <span class="mood-emoji"><i data-lucide="minus" style="width:28px;height:28px;"></i></span>
+              <span class="mood-emoji">😐</span>
               <span class="mood-label">Okay</span>
             </div>
             <div class="mood-option" data-score="4" onclick="quickLogMood(4)">
-              <span class="mood-emoji"><i data-lucide="smile" style="width:28px;height:28px;"></i></span>
+              <span class="mood-emoji">😊</span>
               <span class="mood-label">Good</span>
             </div>
             <div class="mood-option" data-score="5" onclick="quickLogMood(5)">
-              <span class="mood-emoji"><i data-lucide="heart" style="width:28px;height:28px;"></i></span>
+              <span class="mood-emoji">🤩</span>
               <span class="mood-label">Great</span>
             </div>
           </div>
@@ -103,7 +103,7 @@ async function renderDashboard() {
             <button class="btn btn-primary btn-sm" onclick="submitQuickMood()" id="submit-mood-btn">Save Mood</button>
           </div>
           <div id="mood-logged-msg" class="hidden" style="text-align: center; padding: var(--space-md);">
-            <span style="font-size: 2rem;" id="mood-logged-emoji"><i data-lucide="check-circle" style="width: 48px; height: 48px; color: var(--color-success);"></i></span>
+            <span style="font-size: 2rem;" id="mood-logged-emoji">😊</span>
             <p class="text-sm text-muted mt-sm">Mood logged for today!</p>
           </div>
         </div>
@@ -184,7 +184,7 @@ async function loadDashboardHabits() {
     if (!result.success || result.data.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state-icon"><i data-lucide="clipboard-list" style="width:48px;height:48px;"></i></div>
+          <div class="empty-state-icon">📋</div>
           <div class="empty-state-title">No habits yet</div>
           <div class="empty-state-text">Start building great habits today!</div>
           <button class="btn btn-primary" onclick="navigateTo('habits')">Create First Habit</button>
@@ -204,7 +204,7 @@ async function loadDashboardHabits() {
           <span style="font-weight: 500; ${habit.completed_today ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${habit.name}</span>
         </div>
         <div class="habit-streak">
-          <span class="habit-streak-fire" style="display:inline-flex; align-items:center;"><i data-lucide="flame" style="width:14px;height:14px;"></i></span>
+          <span class="habit-streak-fire">🔥</span>
           <span>${habit.current_streak}d</span>
         </div>
       </div>
@@ -220,7 +220,7 @@ async function toggleDashboardHabit(habitId, completed) {
       date: new Date().toISOString(),
       completed,
     });
-    showToast(completed ? 'Habit completed!' : 'Habit unmarked.', completed ? 'success' : 'info');
+    showToast(completed ? 'Habit completed! 🎉' : 'Habit unmarked.', completed ? 'success' : 'info');
     loadDashboardData();
   } catch (error) {
     showToast(error.message || 'Failed to log habit.', 'error');
@@ -249,7 +249,7 @@ async function submitQuickMood() {
       note,
       date: new Date().toISOString(),
     });
-    showToast('Mood logged!', 'success');
+    showToast('Mood logged! 🌟', 'success');
 
     document.getElementById('dashboard-mood-selector').classList.add('hidden');
     document.getElementById('mood-note-area').classList.add('hidden');

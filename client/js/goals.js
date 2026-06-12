@@ -29,7 +29,7 @@ async function loadGoals() {
     const grid = document.getElementById('goals-grid');
 
     if (!result.success || result.data.length === 0) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon"><i data-lucide="target" style="width:48px;height:48px;"></i></div><div class="empty-state-title">No goals yet</div><div class="empty-state-text">Set your first goal and start making progress!</div><button class="btn btn-primary" onclick="openAddGoalModal()">Create Goal</button></div>`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">🎯</div><div class="empty-state-title">No goals yet</div><div class="empty-state-text">Set your first goal and start making progress!</div><button class="btn btn-primary" onclick="openAddGoalModal()">Create Goal</button></div>`;
       return;
     }
 
@@ -91,7 +91,7 @@ async function submitNewGoal() {
   if (!title || !target_date) { showToast('Title and date are required.', 'warning'); return; }
   try {
     await api.post('/goals', { title, description: document.getElementById('goal-desc').value, target_date, category: document.getElementById('goal-category').value });
-    closeModal(); showToast('Goal created!', 'success'); loadGoals();
+    closeModal(); showToast('Goal created! 🎯', 'success'); loadGoals();
   } catch (error) { showToast(error.message || 'Failed to create goal.', 'error'); }
 }
 
@@ -105,7 +105,7 @@ async function submitProgress(id) {
   try {
     const val = parseInt(document.getElementById('goal-progress').value);
     await api.put(`/goals/${id}/progress`, { progress_percent: val });
-    closeModal(); showToast(val >= 100 ? 'Goal completed!' : 'Progress updated.', 'success'); loadGoals();
+    closeModal(); showToast(val >= 100 ? 'Goal completed! 🎉' : 'Progress updated.', 'success'); loadGoals();
   } catch (error) { showToast(error.message || 'Failed to update.', 'error'); }
 }
 

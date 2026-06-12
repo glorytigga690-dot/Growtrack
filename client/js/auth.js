@@ -35,27 +35,14 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   btn.textContent = 'Signing in...';
 
   try {
-    // Local storage login logic
-    const users = storageGet('local_users') || [];
-    const user = users.find(u => u.email === email && u.password === password);
+    const result = await api.post('/auth/login', { email, password });
 
-    if (user) {
-      // Create a fake token for local simulation
-      const mockToken = btoa(email + Date.now());
-      
-      storageSet('access_token', mockToken);
-      storageSet('refresh_token', mockToken);
-      storageSet('user', {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role || 'user'
-      });
-      
-      showToast('Welcome back!', 'success');
+    if (result.success) {
+      storageSet('access_token', result.data.accessToken);
+      storageSet('refresh_token', result.data.refreshToken);
+      storageSet('user', result.data.user);
+      showToast('Welcome back! 🌱', 'success');
       initApp();
-    } else {
-      throw new Error('Invalid email or password.');
     }
   } catch (error) {
     showToast(error.message || 'Login failed.', 'error');
@@ -78,42 +65,21 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
   btn.textContent = 'Creating account...';
 
   try {
-    // Local storage register logic
-    const users = storageGet('local_users') || [];
-    
-    // Check if email already exists
-    if (users.some(u => u.email === email)) {
-      throw new Error('Email is already registered.');
+    const result = await api.post('/auth/register', { name, email, password });
+
+    if (result.success) {
+      storageSet('access_token', result.data.accessToken);
+      storageSet('refresh_token', result.data.refreshToken);
+      storageSet('user', result.data.user);
+      showToast('Account created! Welcome aboard! 🎉', 'success');
+      initApp();
     }
-
-    // Create new user
-    const newUser = {
-      id: 'local_' + Date.now(),
-      name,
-      email,
-      password,
-      role: 'user',
-      createdAt: new Date().toISOString()
-    };
-    
-    users.push(newUser);
-    storageSet('local_users', users);
-
-    // Auto-login
-    const mockToken = btoa(email + Date.now());
-    storageSet('access_token', mockToken);
-    storageSet('refresh_token', mockToken);
-    storageSet('user', {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role
-    });
-    
-    showToast('Account created! Welcome aboard!', 'success');
-    initApp();
   } catch (error) {
-    showToast(error.message || 'Registration failed.', 'error');
+    if (error.errors) {
+      error.errors.forEach(err => showToast(`${err.field}: ${err.message}`, 'error'));
+    } else {
+      showToast(error.message || 'Registration failed.', 'error');
+    }
   } finally {
     btn.disabled = false;
     btn.textContent = 'Create Account';

@@ -1,147 +1,108 @@
 /**
- * GrowTrack — Local Storage Mock API Client
- * Replaces backend API with local storage to work fully client-side on Vercel.
+ * GrowTrack — API Client (Fetch Wrapper)
+ * Handles JWT injection, token refresh, and error formatting
  */
 
-const getDb = (table) => storageGet('mock_db_' + table) || [];
-const setDb = (table, data) => storageSet('mock_db_' + table, data);
+const API_BASE = '/api/v1';
 
 const api = {
+  /**
+   * Core fetch with auth token
+   */
   async request(endpoint, options = {}) {
-    console.log(`Mock API Call: ${options.method || 'GET'} ${endpoint}`);
     const token = storageGet('access_token');
-    const user = storageGet('user');
-    
-    // Simulate network delay
-    await new Promise(r => setTimeout(r, 200));
 
-    // Must be logged in for most endpoints
-    if (!endpoint.startsWith('/auth') && !token) {
-      throw { success: false, message: 'Unauthorized', status: 401 };
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    // Don't override body if it's already a string
+    if (options.body && typeof options.body === 'object') {
+      config.body = JSON.stringify(options.body);
     }
 
-    const body = options.body ? JSON.parse(options.body) : {};
-
     try {
-      // ━━━ HABITS ━━━
-      if (endpoint === '/habits') {
-        let habits = getDb('habits').filter(h => h.userId === user.id);
-        if (options.method === 'GET') return { success: true, data: habits };
-        if (options.method === 'POST') {
-          const newHabit = { id: Date.now().toString(), userId: user.id, ...body, streak: 0, completions: [] };
-          setDb('habits', [...getDb('habits'), newHabit]);
-          return { success: true, data: newHabit };
-        }
-      }
-      if (endpoint.startsWith('/habits/')) {
-        const parts = endpoint.split('/');
-        const id = parts[2];
-        const action = parts[3];
-        let habits = getDb('habits');
-        let habitIndex = habits.findIndex(h => h.id === id && h.userId === user.id);
-        
-        if (habitIndex === -1) throw { status: 404, message: 'Not found' };
-        
-        if (action === 'complete' && options.method === 'POST') {
-          const today = new Date().toISOString().split('T')[0];
-          if (!habits[habitIndex].completions.includes(today)) {
-             habits[habitIndex].completions.push(today);
-             habits[habitIndex].streak = (habits[habitIndex].streak || 0) + 1;
-             setDb('habits', habits);
+      let response = await fetch(`${API_BASE}${endpoint}`, config);
+
+      // If 401 with TOKEN_EXPIRED, try refresh
+      if (response.status === 401) {
+        const data = await response.json();
+        if (data.code === 'TOKEN_EXPIRED') {
+          const refreshed = await api.refreshToken();
+          if (refreshed) {
+            // Retry original request with new token
+            config.headers.Authorization = `Bearer ${storageGet('access_token')}`;
+            response = await fetch(`${API_BASE}${endpoint}`, config);
+          } else {
+            // Refresh failed — logout
+            handleLogout();
+            throw new Error('Session expired. Please login again.');
           }
-          return { success: true, data: habits[habitIndex] };
-        }
-        
-        if (options.method === 'PUT') {
-           habits[habitIndex] = { ...habits[habitIndex], ...body };
-           setDb('habits', habits);
-           return { success: true, data: habits[habitIndex] };
-        }
-        if (options.method === 'DELETE') {
-           habits.splice(habitIndex, 1);
-           setDb('habits', habits);
-           return { success: true, message: 'Deleted' };
         }
       }
 
-      // ━━━ GOALS ━━━
-      if (endpoint === '/goals') {
-        let goals = getDb('goals').filter(g => g.userId === user.id);
-        if (options.method === 'GET') return { success: true, data: goals };
-        if (options.method === 'POST') {
-          const newGoal = { id: Date.now().toString(), userId: user.id, ...body, progress: 0 };
-          setDb('goals', [...getDb('goals'), newGoal]);
-          return { success: true, data: newGoal };
-        }
-      }
-      if (endpoint.startsWith('/goals/')) {
-        const id = endpoint.split('/')[2];
-        let goals = getDb('goals');
-        let goalIndex = goals.findIndex(g => g.id === id && g.userId === user.id);
-        if (goalIndex === -1) throw { status: 404, message: 'Not found' };
-        
-        if (options.method === 'PUT') {
-           goals[goalIndex] = { ...goals[goalIndex], ...body };
-           setDb('goals', goals);
-           return { success: true, data: goals[goalIndex] };
-        }
-        if (options.method === 'DELETE') {
-           goals.splice(goalIndex, 1);
-           setDb('goals', goals);
-           return { success: true, message: 'Deleted' };
-        }
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw { ...result, status: response.status };
       }
 
-      // ━━━ MOOD ━━━
-      if (endpoint === '/moods') {
-        let moods = getDb('moods').filter(m => m.userId === user.id);
-        if (options.method === 'GET') return { success: true, data: moods };
-        if (options.method === 'POST') {
-          const newMood = { id: Date.now().toString(), userId: user.id, ...body, date: new Date().toISOString() };
-          setDb('moods', [...getDb('moods'), newMood]);
-          return { success: true, data: newMood };
-        }
-      }
-      
-      // ━━━ DASHBOARD STATS ━━━
-      if (endpoint === '/analytics/dashboard') {
-        let habits = getDb('habits').filter(h => h.userId === user.id);
-        let goals = getDb('goals').filter(g => g.userId === user.id);
-        let activeHabits = habits.length;
-        let activeGoals = goals.filter(g => g.status !== 'completed').length;
-        
-        return { 
-          success: true, 
-          data: {
-            activeHabits,
-            activeGoals,
-            overallProgress: 50,
-            streak: 0
-          }
-        };
-      }
-      
-      // Fallback
-      return { success: true, data: [] };
+      return result;
     } catch (error) {
-      if (error.status) throw error;
-      throw { success: false, message: 'Internal mock error', status: 500 };
+      if (error.message === 'Failed to fetch') {
+        throw { success: false, message: 'Network error. Are you offline?', offline: true };
+      }
+      throw error;
     }
   },
 
+  // Shorthand methods
   get(endpoint) {
     return this.request(endpoint, { method: 'GET' });
   },
 
   post(endpoint, body = {}) {
-    return this.request(endpoint, { method: 'POST', body: JSON.stringify(body) });
+    return this.request(endpoint, { method: 'POST', body });
   },
 
   put(endpoint, body = {}) {
-    return this.request(endpoint, { method: 'PUT', body: JSON.stringify(body) });
+    return this.request(endpoint, { method: 'PUT', body });
   },
 
   delete(endpoint) {
     return this.request(endpoint, { method: 'DELETE' });
-  }
+  },
+
+  /**
+   * Refresh access token
+   */
+  async refreshToken() {
+    const refreshToken = storageGet('refresh_token');
+    if (!refreshToken) return false;
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) return false;
+
+      const data = await response.json();
+      if (data.success) {
+        storageSet('access_token', data.data.accessToken);
+        storageSet('refresh_token', data.data.refreshToken);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  },
 };

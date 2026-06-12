@@ -61,7 +61,7 @@ async function loadHabits() {
           </div>
           <div class="flex-between" style="margin-top: var(--space-sm);">
             <div class="habit-streak">
-              <span class="habit-streak-fire" style="display:inline-flex; align-items:center;"><i data-lucide="flame" style="width:14px;height:14px;"></i></span>
+              <span class="habit-streak-fire">🔥</span>
               <span>${habit.current_streak}d streak</span>
               ${habit.best_streak > 0 ? `<span class="text-muted">· Best: ${habit.best_streak}d</span>` : ''}
             </div>
@@ -88,7 +88,7 @@ async function loadHabits() {
 async function toggleHabitCompletion(id, completed) {
   try {
     await api.post(`/habits/${id}/log`, { date: new Date().toISOString(), completed });
-    showToast(completed ? 'Habit completed!' : 'Habit unmarked.', completed ? 'success' : 'info');
+    showToast(completed ? 'Habit completed! 🎉' : 'Habit unmarked.', completed ? 'success' : 'info');
     loadHabits();
   } catch (error) {
     showToast(error.message || 'Failed to log habit.', 'error');
@@ -161,7 +161,7 @@ async function submitNewHabit() {
       color: document.getElementById('habit-color').value,
     });
     closeModal();
-    showToast('Habit created!', 'success');
+    showToast('Habit created! 🌱', 'success');
     loadHabits();
   } catch (error) {
     showToast(error.message || 'Failed to create habit.', 'error');

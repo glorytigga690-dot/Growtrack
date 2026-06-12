@@ -6,6 +6,17 @@ server/node_modules/
 # Environment variables (Secrets)
 .env
 
+# Database files
+*.sqlite
+database_mongo_mock.json
+
+# Third-party plugins
+ui-ux-pro-max-skill-main/
+
+# Local outputs/logs
+*_output.txt
+*.log
+
 # OS files
 .DS_Store
 Thumbs.db

@@ -49,7 +49,7 @@ async function submitPageMood() {
   try {
     const tags = document.getElementById('mood-page-tags').value.split(',').map(t => t.trim()).filter(Boolean);
     await api.post('/moods', { mood_score: pageMoodScore, note: document.getElementById('mood-page-note').value, tags, date: new Date().toISOString() });
-    showToast('Mood logged!', 'success');
+    showToast('Mood logged! 🌟', 'success');
     loadMoodHistory();
     loadMoodStats();
     pageMoodScore = null;

@@ -82,7 +82,7 @@ async function handleUpgrade(plan) {
       user.plan = plan;
       storageSet('user', user);
       document.getElementById('user-plan').textContent = `${capitalize(plan)} Plan`;
-      showToast(`Upgraded to ${capitalize(plan)}!`, 'success');
+      showToast(`Upgraded to ${capitalize(plan)}! 🎉`, 'success');
       renderUpgrade();
     }
   } catch (e) { showToast(e.message || 'Upgrade failed.', 'error'); }

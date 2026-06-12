@@ -133,7 +133,7 @@ function installPWA() {
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(choice => {
       if (choice.outcome === 'accepted') {
-        showToast('App installed!', 'success');
+        showToast('App installed! 📱', 'success');
       }
       deferredPrompt = null;
       document.getElementById('pwa-install-banner').classList.add('hidden');

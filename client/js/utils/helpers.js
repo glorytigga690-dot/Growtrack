@@ -43,11 +43,13 @@ function getDaysRemaining(targetDate) {
 
 // String helpers
 function capitalize(str) {
+  if (!str || typeof str !== 'string') return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 function getInitials(name) {
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  if (!name || typeof name !== 'string') return 'GT';
+  return name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
 function truncate(str, len = 50) {

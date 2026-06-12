@@ -9,7 +9,6 @@ const STATIC_ASSETS = [
   '/index.html',
   '/offline.html',
   '/css/index.css',
-  '/css/knowledge.css',
   '/js/utils/helpers.js',
   '/js/utils/toast.js',
   '/js/api.js',
@@ -25,6 +24,10 @@ const STATIC_ASSETS = [
   '/js/admin/adminDashboard.js',
   '/js/admin/userManagement.js',
   '/js/admin/systemMetrics.js',
+  '/js/knowledge.js',
+  '/assets/Plain Sky Blue Background Hd.jpg',
+  '/assets/icons/icon-192.png',
+  '/assets/icons/icon-512.png',
   '/manifest.json',
 ];
 

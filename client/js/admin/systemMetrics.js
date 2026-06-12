@@ -18,10 +18,10 @@ async function loadMetrics() {
     const d = result.data;
 
     document.getElementById('metrics-stats').innerHTML = `
-      <div class="card stat-card animate-in animate-in-delay-1"><div class="stat-icon purple"><i data-lucide="clipboard-list"></i></div><div class="stat-info"><div class="stat-label">Total Habits</div><div class="stat-value">${d.activity.habits}</div></div></div>
-      <div class="card stat-card animate-in animate-in-delay-2"><div class="stat-icon green"><i data-lucide="target"></i></div><div class="stat-info"><div class="stat-label">Total Goals</div><div class="stat-value">${d.activity.goals}</div></div></div>
-      <div class="card stat-card animate-in animate-in-delay-3"><div class="stat-icon yellow"><i data-lucide="smile"></i></div><div class="stat-info"><div class="stat-label">Mood Logs</div><div class="stat-value">${d.activity.mood_logs}</div></div></div>
-      <div class="card stat-card animate-in animate-in-delay-4"><div class="stat-icon blue"><i data-lucide="check-circle"></i></div><div class="stat-info"><div class="stat-label">Habit Logs</div><div class="stat-value">${d.activity.habit_logs}</div></div></div>
+      <div class="card stat-card animate-in animate-in-delay-1"><div class="stat-icon purple">📋</div><div class="stat-info"><div class="stat-label">Total Habits</div><div class="stat-value">${d.activity.habits}</div></div></div>
+      <div class="card stat-card animate-in animate-in-delay-2"><div class="stat-icon green">🎯</div><div class="stat-info"><div class="stat-label">Total Goals</div><div class="stat-value">${d.activity.goals}</div></div></div>
+      <div class="card stat-card animate-in animate-in-delay-3"><div class="stat-icon yellow">😊</div><div class="stat-info"><div class="stat-label">Mood Logs</div><div class="stat-value">${d.activity.mood_logs}</div></div></div>
+      <div class="card stat-card animate-in animate-in-delay-4"><div class="stat-icon blue">✅</div><div class="stat-info"><div class="stat-label">Habit Logs</div><div class="stat-value">${d.activity.habit_logs}</div></div></div>
     `;
 
     const ctx = document.getElementById('metrics-chart').getContext('2d');

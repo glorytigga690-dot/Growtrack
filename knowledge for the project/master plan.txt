@@ -1,0 +1,213 @@
+📘 GrowTrack: Full-Fledged Development & Launch Plan
+Submitted By: Glory Tigga | Course: BCA 6th Year | College: Pandu College
+Methodology: Waterfall SDLC | Stack: HTML/CSS/JS + Node.js/Express + MongoDB + MySQL | Target: Hybrid Web + PWA + Admin/Client Panels + Freemium Monetization
+🗺️ Phase 1: Requirement Analysis & Documentation (Week 1-2)
+🔹 Functional Requirements
+User registration, login, session management (JWT)
+CRUD for Habits, Goals, Mood Logs
+Automated consistency %, Growth Score calculation
+Weekly/Monthly report generation (PDF + charts)
+PWA installability, offline logging, auto-sync
+Admin dashboard (user management, subscription control, system metrics)
+Freemium tier gating (Free vs Pro features)
+🔹 Non-Functional Requirements
+Security: bcrypt hashing, JWT auth, input sanitization, HTTPS, rate limiting
+Performance: <3s initial load, lightweight vanilla JS, CDN charting
+Privacy: Data export/delete, consent toggles, GDPR-style compliance
+Scalability: Modular routing, separate admin/client paths, DB indexing strategy
+Compliance: Academic submission-ready documentation + commercial architecture notes
+📄 Deliverables
+✅ SRS Document (Functional/Non-Functional, User Stories, Constraints)
+✅ DFD Level 0 & Level 1 (Updated with Admin & Payment flows)
+✅ Competitive Analysis & Differentiation Report (Mood-Habit correlation, Growth Score, PDF export, PWA)
+✅ Project Scope & Risk Matrix
+🏗️ Phase 2: System Architecture & Design (Week 2-3)
+🔹 Architecture Overview
+12
+🔹 Routing Structure
+/client/* → End-user dashboard, logging, analytics, settings, upgrade flow
+/admin/* → RBAC-protected panel, user management, billing oversight, system health
+/api/* → Public/private endpoints with role-based middleware
+🔹 UI/UX Design Plan
+Client: Clean dashboard, habit/goal cards, mood slider, chart section, export button, install prompt
+Admin: Data tables, filter/search, subscription toggle, analytics overview, audit log
+PWA: Responsive grid, touch-friendly targets, offline fallback UI, theme toggle
+📄 Deliverables
+✅ High-Fidelity Wireframes (Client & Admin)
+✅ System Architecture Diagram
+✅ API Endpoint Contract (RESTful, versioned /api/v1/...)
+✅ PWA Implementation Strategy (Manifest, SW caching, IndexedDB queue, Web Push prep)
+🗃️ Phase 3: Database Design (Week 3-4)
+Aligned with PDF requirement for both MongoDB & MySQL
+🔹 MySQL (Relational / Transactional)
+Table
+Purpose
+users
+id, name, email, password_hash, role (client/admin), created_at
+subscriptions
+user_id, plan_type (free/pro/team), status, start_date, end_date, provider_ref
+admin_logs
+admin_id, action, timestamp, ip_address
+payments
+user_id, amount, status, transaction_id, created_at
+🔹 MongoDB (Flexible / Time-Series Friendly)
+Collection
+Purpose
+habits
+user_id, name, frequency, target_days, status, created_at
+habit_logs
+habit_id, date, completed, synced_status
+goals
+user_id, title, target_date, progress_percent, status, created_at
+mood_logs
+user_id, date, mood_score (1-5), note, tags
+report_snapshots
+user_id, period (weekly/monthly), growth_score, consistency, mood_avg, generated_at
+📄 Deliverables
+✅ ER Diagram (MySQL) + Schema Diagram (MongoDB)
+✅ Indexing Strategy (e.g., user_id + date compound indexes for logs)
+✅ Data Flow & Sync Logic (Offline → IndexedDB → MongoDB/MySQL on reconnect)
+💻 Phase 4: Implementation (Week 5-8)
+🔹 Backend (Node.js + Express)
+Setup: express, cors, helmet, dotenv, morgan
+Auth: JWT generation/verification, bcrypt hashing, role middleware
+APIs: Habit/Goal/Mood CRUD, report generation, admin management, subscription sync
+Validation: express-validator, sanitization, error handling middleware
+Payment Webhooks: Stripe/Razorpay sandbox event handlers
+🔹 Frontend Client (Vanilla JS + PWA)
+Structure: Modular app.js, feature-based CSS, semantic HTML5
+Features: Dashboard layout, logging forms, Chart.js integration, PDF export, settings
+PWA: manifest.json, manual service-worker.js (cache-static, network-API), IndexedDB offline queue, install prompt
+Offline Logic: Queue unsaved logs → sync on online event → update UI optimistically
+🔹 Frontend Admin (Vanilla JS + RBAC)
+Protected routes via JWT role check
+Tables: User list, subscription status, system metrics
+Actions: Suspend/activate users, view audit logs, export CSV/JSON
+Analytics: DAU/MAU, plan distribution, feature usage charts
+📄 Deliverables
+✅ Fully structured source code repo
+✅ Postman collection for API testing
+✅ PWA audit checklist (Lighthouse >90)
+✅ Role-based access control documentation
+📊 Phase 5: Analytics & Reporting Engine (Week 8-9)
+🔹 Growth Score Algorithm
+1234
+Habit Consistency: (Completed Days / Target Days) × 100
+Mood Stability: 100 - (Std Dev of Mood Scores × 10)
+Streak Bonus: min(10, current_streak_days)
+🔹 Mood-Habit Correlation
+Group habit completion rate by mood score (1-5)
+Display as scatter/bar chart: "You complete 68% more habits on high-mood days"
+Rule-based insight cards for dashboard
+🔹 Report Generation
+Weekly/Monthly aggregation via backend cron or on-demand endpoint
+Client-side PDF export using jsPDF + html2canvas
+Embed charts, growth score, top insights, date range
+📄 Deliverables
+✅ Algorithm pseudocode & mathematical justification (for report)
+✅ Chart.js integration plan
+✅ PDF export template structure
+✅ Insight generation logic
+💰 Phase 6: Monetization & Payment Integration (Week 9-10)
+🔹 Tier Structure
+Plan
+Price
+Features
+Free
+$0
+3 habits, 1 goal, basic mood, weekly reports, PWA
+Pro
+$2.99/mo
+Unlimited, correlation analytics, PDF export, adaptive scaling, priority sync
+Edu/Team
+$4.99/user/mo
+Admin dashboard, cohort analytics, bulk import, custom reports
+🔹 Payment Flow
+Stripe/Razorpay sandbox for demo
+Webhook listeners for subscription.created, payment.succeeded, invoice.failed
+UI: Upgrade modal, billing history, downgrade flow, grace period handling
+Academic Note: Real transactions disabled; sandbox mode documented as "Production-Ready Architecture"
+📄 Deliverables
+✅ Payment UI/UX wireframes
+✅ Webhook handling logic diagram
+✅ Sandbox testing checklist
+✅ Monetization section for final report
+🧪 Phase 7: Testing & Quality Assurance (Week 10-11)
+🔹 Test Categories
+Unit/Integration: API endpoint validation, JWT auth, DB queries
+Frontend: Cross-browser, mobile responsiveness, PWA offline simulation
+Security: XSS/CSRF prevention, input sanitization, password policy, role escalation prevention
+Payment Flow: Sandbox success/fail, webhook retry, subscription state changes
+Performance: Load time <3s, Lighthouse PWA >90, DB query optimization
+📄 Deliverables
+✅ Test Case Document (Functional, Security, UI, Payment)
+✅ Bug Log & Resolution Tracker
+✅ UAT Sign-off Template
+✅ Lighthouse PWA Report
+🚀 Phase 8: Deployment & Submission Package (Week 11-12)
+🔹 Deployment Stack
+Frontend (PWA): Netlify/Vercel (auto-HTTPS, drag-drop, cache control)
+Backend: Render/Railway (Node.js, env vars, auto-redeploy)
+DB: MongoDB Atlas (free cluster) + MySQL via Supabase/PlanetScale
+Domain: Subdomain for demo, custom domain optional post-submission
+🔹 Academic Submission Package
+Live URL + GitHub repo (private until submission, then public)
+README.md (Setup, Env, Run, PWA install, Admin access)
+SRS, DFD L0/L1, ERD, Architecture Diagram
+API Documentation + Postman Collection
+Test Cases + UAT Report
+Final Project Report (aligned with college format)
+Lighthouse PWA Score + Growth Score Algorithm Proof
+Viva Presentation Deck
+📄 Deliverables
+✅ Production deployment checklist
+✅ Environment config guide (.env examples)
+✅ Submission folder structure
+✅ Demo script (5-min walkthrough)
+🔮 Phase 9: Post-Launch & Future Scope (Documentation Only for BCA)
+AI/ML predictive habit success (reference arXiv:2105.12345)
+Flutter mobile app (reference PDF tools)
+Firebase push notifications + advanced cohort benchmarking
+White-label SaaS for colleges/coaching centers
+GDPR/CCPA compliance automation, data retention policies
+📅 Waterfall Timeline Summary
+Week
+Phase
+Key Output
+1-2
+Requirement Analysis
+SRS, DFDs, Competitive Report
+2-3
+System Design
+Architecture, Wireframes, API Contract, PWA Plan
+3-4
+Database Design
+ERD, Schema, Indexing, Sync Logic
+5-6
+Backend Implementation
+Auth, CRUD APIs, RBAC, Payment Webhooks
+6-7
+Frontend Client + PWA
+Dashboard, Logging, Charts, Offline Queue, Install
+7-8
+Frontend Admin + UI Polish
+User Mgmt, Subscriptions, Analytics Tables
+8-9
+Analytics & Reporting
+Growth Score, Correlation, PDF Export
+10
+Testing & Security
+Test Cases, Bug Fixes, Lighthouse Audit
+11
+Deployment & Docs
+Live URL, Repo, README, Final Report
+12
+Submission & Viva Prep
+Presentation, Demo Script, Package Handover
+✅ Final Checklist Before Development Starts
+Confirm DB split strategy (MySQL for Users/Subscriptions/Admin, MongoDB for Logs/Analytics)
+Lock PWA priority (Offline sync + installability vs full push notifications)
+Approve Growth Score formula & correlation logic for documentation
+Decide sandbox payment provider (Stripe or Razorpay)
+Set GitHub repo, branching strategy (main, dev, feature/*)
+Prepare college report template alignment
