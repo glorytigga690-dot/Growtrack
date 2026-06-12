@@ -27,7 +27,7 @@ module.exports = {
     password: process.env.MYSQL_PASSWORD || '',
     database: process.env.MYSQL_DATABASE || 'growtrack',
     dialect: process.env.DB_DIALECT || 'sqlite', // Default to sqlite for beginners
-    storage: process.env.DB_STORAGE || '../database.sqlite',
+    storage: process.env.DB_STORAGE || (process.env.VERCEL ? '/tmp/database.sqlite' : '../database.sqlite'),
   },
 
   // Stripe
