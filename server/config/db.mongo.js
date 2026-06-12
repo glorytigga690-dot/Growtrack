@@ -11,6 +11,13 @@ const connectMongoDB = async () => {
     return conn;
   } catch (error) {
     console.warn(`⚠️  MongoDB connection failed: ${error.message}`);
+    
+    // Check if running on Vercel
+    if (process.env.VERCEL) {
+      console.log('🚀 Running on Vercel. Using Mock Mongoose Model fallback for data operations.');
+      return null;
+    }
+
     console.log('🚀 Starting In-Memory MongoDB for development...');
 
     try {

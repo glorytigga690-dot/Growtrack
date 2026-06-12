@@ -96,20 +96,24 @@ const startServer = async () => {
     await connectMongoDB();
     await connectMySQL();
 
-    // Start listening
-    const PORT = config.port;
-    app.listen(PORT, () => {
-      console.log('');
-      console.log('🌱 ════════════════════════════════════════');
-      console.log(`   GrowTrack Server v1.0.0`);
-      console.log(`   Environment: ${config.nodeEnv}`);
-      console.log(`   Port: ${PORT}`);
-      console.log(`   API: http://localhost:${PORT}/api/v1`);
-      console.log(`   Client: http://localhost:${PORT}`);
-      console.log(`   Payment Mode: ${config.paymentMode}`);
-      console.log('🌱 ════════════════════════════════════════');
-      console.log('');
-    });
+    // Start listening (only if not on Vercel)
+    if (!process.env.VERCEL) {
+      const PORT = config.port;
+      app.listen(PORT, () => {
+        console.log('');
+        console.log('🌱 ════════════════════════════════════════');
+        console.log(`   GrowTrack Server v1.0.0`);
+        console.log(`   Environment: ${config.nodeEnv}`);
+        console.log(`   Port: ${PORT}`);
+        console.log(`   API: http://localhost:${PORT}/api/v1`);
+        console.log(`   Client: http://localhost:${PORT}`);
+        console.log(`   Payment Mode: ${config.paymentMode}`);
+        console.log('🌱 ════════════════════════════════════════');
+        console.log('');
+      });
+    } else {
+      console.log('🚀 Server initialized in Vercel Serverless mode.');
+    }
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
