@@ -3,7 +3,9 @@
  * Handles JWT injection, token refresh, and error formatting
  */
 
-const API_BASE = '/api/v1';
+const API_BASE = window.location.protocol === 'file:' 
+  ? 'http://localhost:5000/api/v1' 
+  : '/api/v1';
 
 const api = {
   /**
