@@ -129,11 +129,34 @@ class MockQuery {
 }
 
 class MockModel {
-  constructor(modelName) {
+  constructor(modelName, schema) {
     this.modelName = modelName;
+    this.schema = schema;
     if (!mockData[modelName]) {
       mockData[modelName] = [];
     }
+  }
+
+  _getDefaults() {
+    const defaults = {};
+    if (this.schema && this.schema.paths) {
+      for (const key in this.schema.paths) {
+        const path = this.schema.paths[key];
+        if (path.defaultValue !== undefined) {
+          if (key === '_id') continue;
+          if (typeof path.defaultValue === 'function') {
+            try {
+              defaults[key] = path.defaultValue();
+            } catch (e) {
+              // ignore
+            }
+          } else {
+            defaults[key] = path.defaultValue;
+          }
+        }
+      }
+    }
+    return defaults;
   }
 
   find(filter = {}) {
@@ -148,8 +171,10 @@ class MockModel {
   }
 
   async create(data) {
+    const defaults = this._getDefaults();
     const doc = {
       _id: uuidv4(),
+      ...defaults,
       ...data,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -195,13 +220,16 @@ class MockModel {
   }
 
   _wrapDoc(rawDoc) {
-    const modelInstance = { ...rawDoc };
-    modelInstance.toObject = () => rawDoc;
-    modelInstance.toJSON = () => rawDoc;
+    const defaults = this._getDefaults();
+    const mergedDoc = { ...defaults, ...rawDoc };
+    const modelInstance = { ...mergedDoc };
+    modelInstance.toObject = () => mergedDoc;
+    modelInstance.toJSON = () => mergedDoc;
     modelInstance.save = async () => {
       const idx = mockData[this.modelName].findIndex(d => d._id === rawDoc._id);
       if (idx !== -1) {
         rawDoc.updated_at = new Date().toISOString();
+        Object.assign(rawDoc, mergedDoc);
         mockData[this.modelName][idx] = rawDoc;
         saveData();
       }

@@ -22,7 +22,7 @@ function getModel(name, schema) {
         return typeof val === 'function' ? val.bind(realModel) : val;
       } else {
         if (!mockModel) {
-          mockModel = new MockModel(name);
+          mockModel = new MockModel(name, schema);
         }
         const val = mockModel[prop];
         return typeof val === 'function' ? val.bind(mockModel) : val;
