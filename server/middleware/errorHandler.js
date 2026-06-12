@@ -58,7 +58,7 @@ const errorHandler = (err, req, res, next) => {
   // Default 500
   res.status(500).json({
     success: false,
-    message: config.nodeEnv === 'development' ? err.message : 'Internal server error',
+    message: err.message || 'Internal server error',
   });
 };
 
