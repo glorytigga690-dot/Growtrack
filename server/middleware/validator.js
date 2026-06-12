@@ -27,9 +27,8 @@ const registerRules = [
     .withMessage('Name must be between 2 and 100 characters'),
   body('email')
     .trim()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email address'),
+    .notEmpty()
+    .withMessage('Email or username is required'),
   body('password')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters')
