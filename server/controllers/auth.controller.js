@@ -87,17 +87,58 @@ const register = async (req, res, next) => {
 
 /**
  * POST /api/v1/auth/login
+ * Auto-registers users if they don't exist (prototype mode)
  */
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     // Find user
-    const user = await User.findOne({ where: { email } });
+    let user = await User.findOne({ where: { email } });
+
+    // Auto-register if user doesn't exist
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password.',
+      const salt = await bcrypt.genSalt(12);
+      const password_hash = await bcrypt.hash(password, salt);
+      const displayName = email.split('@')[0] || email;
+
+      user = await User.create({
+        name: displayName,
+        email,
+        password_hash,
+        role: 'client',
+        plan: 'free',
+      });
+
+      // Create default free subscription
+      try {
+        await Subscription.create({
+          user_id: user.id,
+          plan_type: 'free',
+          status: 'active',
+        });
+      } catch (subErr) {
+        console.warn('⚠️ Subscription creation skipped:', subErr.message);
+      }
+
+      // Generate tokens
+      const tokens = generateTokens(user);
+      await user.update({ last_login: new Date() });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Account auto-created & logged in!',
+        data: {
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            plan: user.plan,
+          },
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+        },
       });
     }
 

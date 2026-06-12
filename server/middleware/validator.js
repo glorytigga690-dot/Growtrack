@@ -30,12 +30,8 @@ const registerRules = [
     .notEmpty()
     .withMessage('Email or username is required'),
   body('password')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters')
-    .matches(/\d/)
-    .withMessage('Password must contain at least one number')
-    .matches(/[a-zA-Z]/)
-    .withMessage('Password must contain at least one letter'),
+    .isLength({ min: 1 })
+    .withMessage('Password is required'),
 ];
 
 const loginRules = [
