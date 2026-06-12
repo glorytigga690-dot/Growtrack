@@ -31,24 +31,33 @@ const api = {
     try {
       let response = await fetch(`${API_BASE}${endpoint}`, config);
 
-      // If 401 with TOKEN_EXPIRED, try refresh
-      if (response.status === 401) {
-        const data = await response.json();
-        if (data.code === 'TOKEN_EXPIRED') {
-          const refreshed = await api.refreshToken();
-          if (refreshed) {
-            // Retry original request with new token
-            config.headers.Authorization = `Bearer ${storageGet('access_token')}`;
-            response = await fetch(`${API_BASE}${endpoint}`, config);
-          } else {
-            // Refresh failed — logout
-            handleLogout();
-            throw new Error('Session expired. Please login again.');
-          }
-        }
+      let responseText = await response.text();
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        result = { success: false, message: responseText || `HTTP Error ${response.status}: ${response.statusText}` };
       }
 
-      const result = await response.json();
+      // If 401 with TOKEN_EXPIRED, try refresh
+      if (response.status === 401 && result && result.code === 'TOKEN_EXPIRED') {
+        const refreshed = await api.refreshToken();
+        if (refreshed) {
+          // Retry original request with new token
+          config.headers.Authorization = `Bearer ${storageGet('access_token')}`;
+          response = await fetch(`${API_BASE}${endpoint}`, config);
+          responseText = await response.text();
+          try {
+            result = JSON.parse(responseText);
+          } catch (e) {
+            result = { success: false, message: responseText || `HTTP Error ${response.status}: ${response.statusText}` };
+          }
+        } else {
+          // Refresh failed — logout
+          handleLogout();
+          throw new Error('Session expired. Please login again.');
+        }
+      }
 
       if (!response.ok) {
         throw { ...result, status: response.status };
@@ -96,7 +105,8 @@ const api = {
 
       if (!response.ok) return false;
 
-      const data = await response.json();
+      const text = await response.text();
+      const data = JSON.parse(text);
       if (data.success) {
         storageSet('access_token', data.data.accessToken);
         storageSet('refresh_token', data.data.refreshToken);
